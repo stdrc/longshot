@@ -7,6 +7,8 @@
   <title>长截图拼接工具</title>
   <!-- 引入 Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <!-- 引入 SortableJS 用于拖拽排序 -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <style>
     * {
       margin: 0;
@@ -213,6 +215,30 @@
 
     .file-item:hover {
       border-color: #bdc3c7;
+    }
+
+    /* 拖拽排序样式 */
+    .file-item.sortable-chosen {
+      transform: scale(1.05);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      border-color: #3498db;
+      z-index: 10;
+    }
+
+    .file-item.sortable-ghost {
+      opacity: 0.4;
+      background: #f8f9fa;
+      border: 2px dashed #3498db;
+    }
+
+    .sortable-drag {
+      transform: rotate(5deg);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    /* 拖拽时隐藏删除按钮 */
+    .file-item.sortable-chosen .remove-btn {
+      opacity: 0 !important;
     }
 
 
@@ -585,8 +611,7 @@
         this.stitcher = new LongScreenshotStitcher();
         this.selectedFiles = [];
         this.resultCanvas = null;
-
-
+        this.sortable = null; // SortableJS 实例
 
         this.initializeElements();
         this.bindEvents();
@@ -680,6 +705,7 @@
           // 显示上传提示，隐藏图片区域
           this.uploadPrompt.style.display = 'flex';
           this.selectedImages.style.display = 'none';
+          this.destroySortable(); // 销毁拖拽实例
           return;
         }
 
@@ -691,6 +717,7 @@
         this.selectedFiles.forEach((file, index) => {
           const fileItem = document.createElement('div');
           fileItem.className = 'file-item';
+          fileItem.setAttribute('data-file-index', index); // 添加数据属性用于拖拽
 
           // 创建图片预览
           const fileIconContainer = document.createElement('div');
@@ -732,6 +759,9 @@
           this.fileInput.click();
         });
         this.fileItems.appendChild(addMoreInList);
+
+        // 初始化或重新初始化拖拽排序
+        this.initializeSortable();
       }
 
       generateImagePreview(file, imgElement) {
@@ -748,6 +778,58 @@
         this.updateButtons();
       }
 
+      // 初始化拖拽排序功能
+      initializeSortable() {
+        this.destroySortable(); // 先销毁之前的实例
+
+        if (this.selectedFiles.length <= 1) return; // 只有一张图片时不需要排序
+
+        this.sortable = new Sortable(this.fileItems, {
+          animation: 200, // 动画时长
+          ghostClass: 'sortable-ghost', // 拖拽时的占位符样式
+          chosenClass: 'sortable-chosen', // 被选中元素的样式
+          dragClass: 'sortable-drag', // 拖拽中元素的样式
+          filter: '.add-more-in-list', // 排除"添加更多"按钮
+          preventOnFilter: false,
+          forceFallback: false, // 使用原生 HTML5 拖拽
+          fallbackTolerance: 3,
+
+          onStart: (evt) => {
+            // 拖拽开始时的处理
+            console.log('开始拖拽图片', evt.oldIndex);
+          },
+
+          onEnd: (evt) => {
+            // 拖拽结束后更新文件顺序
+            if (evt.newIndex !== evt.oldIndex) {
+              this.reorderFiles(evt.oldIndex, evt.newIndex);
+            }
+          }
+        });
+      }
+
+      // 销毁拖拽排序实例
+      destroySortable() {
+        if (this.sortable) {
+          this.sortable.destroy();
+          this.sortable = null;
+        }
+      }
+
+      // 重新排序文件数组
+      reorderFiles(oldIndex, newIndex) {
+        if (oldIndex === newIndex) return;
+
+        // 移动文件到新位置
+        const movedFile = this.selectedFiles.splice(oldIndex, 1)[0];
+        this.selectedFiles.splice(newIndex, 0, movedFile);
+
+        console.log(`图片从位置 ${oldIndex + 1} 移动到位置 ${newIndex + 1}`);
+
+        // 重新渲染列表以更新序号
+        this.updateFileList();
+      }
+
 
 
 
@@ -757,6 +839,7 @@
       clearFiles() {
         this.selectedFiles = [];
         this.fileInput.value = '';
+        this.destroySortable(); // 销毁拖拽实例
         this.updateFileList();
         this.updateButtons();
         this.hideResult();
