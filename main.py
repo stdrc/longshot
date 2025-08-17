@@ -7,7 +7,10 @@
 import numpy as np
 from PIL import Image
 import os
+import glob
+import argparse
 from typing import List, Tuple, Optional
+import sys
 
 
 def image_to_row_hashes(image: Image.Image, ignore_right_pixels: int = 20) -> List[int]:
@@ -201,39 +204,133 @@ def stitch_multiple_images(
     print(f"最终尺寸: {result.size}")
 
 
+def parse_pattern_and_generate_output(pattern: str) -> Tuple[str, str]:
+    """
+    解析输入模式并生成输出文件名
+    例如: "IMG_627FF0035451-*.jpeg" -> ("IMG_627FF0035451-", ".jpeg") -> "IMG_627FF0035451-concat.jpeg"
+    """
+    if "*" not in pattern:
+        raise ValueError("模式必须包含通配符 '*'")
+
+    # 找到第一个通配符的位置
+    star_index = pattern.find("*")
+    prefix = pattern[:star_index]
+    suffix = pattern[star_index + 1 :]
+
+    # 如果suffix中还有通配符，只取到下一个通配符之前的部分
+    if "*" in suffix:
+        suffix = suffix[: suffix.find("*")]
+
+    # 生成输出文件名
+    if "." in suffix:
+        # 提取文件扩展名
+        extension = suffix
+        output_name = f"{prefix}concat{extension}"
+    else:
+        # 如果没有扩展名，默认使用 .jpeg
+        output_name = f"{prefix}concat.jpeg"
+
+    return prefix, output_name
+
+
+def find_matching_files(pattern: str) -> List[str]:
+    """
+    根据通配符模式查找匹配的文件
+    """
+    matching_files = glob.glob(pattern)
+
+    # 过滤出图片文件（常见的图片扩展名）
+    image_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"}
+    image_files = []
+
+    for file in matching_files:
+        _, ext = os.path.splitext(file.lower())
+        if ext in image_extensions:
+            # 排除已经是拼接结果的文件 (包含 'concat' 的文件名)
+            basename = os.path.basename(file).lower()
+            if "concat" not in basename:
+                image_files.append(file)
+            else:
+                print(f"跳过拼接结果文件: {file}")
+
+    return image_files
+
+
 def main():
     """
     主函数
     """
-    # 获取当前目录下的图片文件
-    image_files = []
-    # for file in ["1.jpeg", "2.jpeg"]:
-    for file in [
-        "IMG_8F9EF97CEBE1-1.jpeg",
-        "IMG_8F9EF97CEBE1-2.jpeg",
-        "IMG_8F9EF97CEBE1-3.jpeg",
-        "IMG_8F9EF97CEBE1-4.jpeg",
-        "IMG_8F9EF97CEBE1-5.jpeg",
-    ]:
-        if os.path.exists(file):
-            image_files.append(file)
+    parser = argparse.ArgumentParser(
+        description="长截图拼接工具 - 支持通配符模式批量拼接图片",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+示例用法:
+  python main.py "IMG_627FF0035451-*.jpeg"
+  python main.py "screenshot-*.png"
+  python main.py "page-*.jpg" --ignore-pixels 30
+        """,
+    )
+
+    parser.add_argument("pattern", help="文件名通配符模式，例如: 'prefix-*.jpeg'")
+
+    parser.add_argument(
+        "--ignore-pixels",
+        type=int,
+        default=20,
+        help="忽略右侧多少像素以排除滚动条影响 (默认: 20)",
+    )
+
+    parser.add_argument(
+        "--output", help="指定输出文件名 (可选，默认自动生成为 prefix-concat.extension)"
+    )
+
+    args = parser.parse_args()
+
+    try:
+        # 查找匹配的文件
+        print(f"搜索模式: {args.pattern}")
+        image_files = find_matching_files(args.pattern)
+
+        if len(image_files) == 0:
+            print(f"错误: 没有找到匹配模式 '{args.pattern}' 的图片文件")
+            sys.exit(1)
+
+        if len(image_files) < 2:
+            print(f"错误: 只找到 {len(image_files)} 张图片，至少需要2张图片进行拼接")
+            print("找到的文件:")
+            for file in image_files:
+                print(f"  - {file}")
+            sys.exit(1)
+
+        # 按文件名排序
+        image_files.sort()
+
+        print(f"找到 {len(image_files)} 张图片:")
+        for i, file in enumerate(image_files, 1):
+            print(f"  {i}. {file}")
+
+        # 确定输出文件名
+        if args.output:
+            output_file = args.output
         else:
-            print(f"文件不存在: {file}")
+            try:
+                _, output_file = parse_pattern_and_generate_output(args.pattern)
+            except ValueError as e:
+                print(f"错误: {e}")
+                sys.exit(1)
 
-    if len(image_files) < 2:
-        print("需要至少两张图片文件 (1.jpeg, 2.jpeg)")
-        return
+        print(f"\n输出文件: {output_file}")
+        print(f"配置: 忽略右侧 {args.ignore_pixels} 像素以排除滚动条影响")
 
-    # 按文件名排序
-    image_files.sort()
+        # 执行拼接
+        stitch_multiple_images(image_files, output_file, args.ignore_pixels)
 
-    # 输出文件名
-    output_file = "stitched_result.jpeg"
-
-    # 执行拼接（忽略右侧20像素来排除滚动条影响）
-    ignore_pixels = 20
-    print(f"配置: 忽略右侧 {ignore_pixels} 像素以排除滚动条影响")
-    stitch_multiple_images(image_files, output_file, ignore_pixels)
+    except KeyboardInterrupt:
+        print("\n操作已取消")
+        sys.exit(1)
+    except Exception as e:
+        print(f"错误: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
