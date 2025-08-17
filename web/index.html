@@ -5,6 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>长截图拼接工具</title>
+  <!-- 引入 Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <style>
     * {
       margin: 0;
@@ -42,36 +44,97 @@
       font-size: 1.1em;
     }
 
-    .upload-area {
+    .upload-section {
       background: white;
-      border: 2px dashed #bdc3c7;
       border-radius: 4px;
-      padding: 40px 20px;
-      text-align: center;
+      padding: 20px;
       margin-bottom: 30px;
-      cursor: pointer;
+      border: 1px solid #ddd;
+      cursor: default;
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
     }
 
-    .upload-area:hover {
+    .upload-section h3 {
+      margin-bottom: 20px;
+      color: #2c3e50;
+      font-weight: 500;
+    }
+
+    .upload-section:hover {
       border-color: #3498db;
     }
 
-    .upload-area.dragover {
+    .upload-section.dragover {
       border-color: #2980b9;
     }
 
-
-
-    .upload-text {
-      font-size: 1.2em;
-      color: #7f8c8d;
-      margin-bottom: 10px;
+    .upload-prompt {
+      padding: 0;
+      display: flex;
+      justify-content: flex-start;
     }
 
-    .upload-hint {
-      font-size: 0.9em;
-      color: #95a5a6;
+    .selected-images {
+      width: 100%;
+      text-align: left;
+      margin: 0;
+      padding: 0;
     }
+
+
+
+    .add-more-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 120px;
+      height: 120px;
+      background: #f8f9fa;
+      border: 2px dashed #3498db;
+      border-radius: 8px;
+      color: #3498db;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 2em;
+      margin: 0;
+    }
+
+    .add-more-btn:hover {
+      background: #e3f2fd;
+      border-color: #2980b9;
+      color: #2980b9;
+    }
+
+    .add-more-in-list {
+      background: #f8f9fa !important;
+      border: 2px dashed #3498db !important;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .add-more-in-list:hover {
+      background: #e3f2fd !important;
+      border-color: #2980b9 !important;
+    }
+
+    .add-more-icon {
+      font-size: 2em;
+      color: #3498db;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+
+
+
 
     .file-input {
       display: none;
@@ -125,65 +188,107 @@
       font-weight: 500;
     }
 
+    #fileItems {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin: 0;
+      padding: 0;
+    }
+
     .file-item {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      padding: 12px 0;
-      border-bottom: 1px solid #ecf0f1;
+      justify-content: center;
+      background: #f8f9fa;
+      border: 2px solid #e1e8ed;
+      border-radius: 8px;
+      padding: 8px;
+      cursor: default;
+      position: relative;
+      width: 120px;
+      height: 120px;
     }
 
-    .file-item:last-child {
-      border-bottom: none;
+    .file-item:hover {
+      border-color: #bdc3c7;
     }
 
-    .file-info {
-      display: flex;
-      align-items: center;
-    }
+
 
     .file-icon {
-      width: 40px;
-      height: 40px;
+      width: 100px;
+      height: 100px;
       background: #3498db;
-      border-radius: 2px;
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: white;
       font-weight: bold;
-      margin-right: 15px;
       font-size: 12px;
+      overflow: hidden;
+      position: relative;
     }
 
-    .file-details {
-      display: flex;
-      flex-direction: column;
+    .file-preview {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 6px;
     }
 
-    .file-name {
-      font-weight: 500;
-      color: #2c3e50;
-      margin-bottom: 2px;
+    .file-index {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 4px 6px;
+      border-radius: 12px;
+      line-height: 1;
+      min-width: 20px;
+      text-align: center;
     }
 
-    .file-size {
-      font-size: 0.9em;
-      color: #7f8c8d;
-    }
+
 
     .remove-btn {
-      background: #e74c3c;
+      background: rgba(0, 0, 0, 0.7);
       color: white;
       border: none;
-      padding: 6px 12px;
-      border-radius: 2px;
+      padding: 6px;
+      border-radius: 50%;
       cursor: pointer;
-      font-size: 12px;
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      z-index: 3;
+      opacity: 0;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      backdrop-filter: blur(4px);
+    }
+
+    .file-item:hover .remove-btn {
+      opacity: 1;
     }
 
     .remove-btn:hover {
-      background: #c0392b;
+      background: rgba(239, 68, 68, 0.9);
+      transform: scale(1.1);
+    }
+
+    .remove-btn svg {
+      width: 12px;
+      height: 12px;
     }
 
     .actions {
@@ -317,7 +422,7 @@
       padding: 20px 0;
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 768px) {
       .container {
         padding: 15px;
       }
@@ -326,8 +431,8 @@
         font-size: 2em;
       }
 
-      .upload-area {
-        padding: 40px 15px;
+      .upload-section {
+        padding: 15px;
       }
 
       .actions {
@@ -337,20 +442,98 @@
       .btn {
         justify-content: center;
       }
+
+      #fileItems {
+        gap: 10px;
+        justify-content: flex-start;
+      }
+
+      .file-item {
+        width: 100px;
+        height: 100px;
+        padding: 6px;
+      }
+
+      .file-icon {
+        width: 85px;
+        height: 85px;
+      }
+
+      .add-more-btn {
+        width: 100px;
+        height: 100px;
+      }
+
+      .remove-btn {
+        width: 20px;
+        height: 20px;
+        padding: 4px;
+        top: 4px;
+        right: 4px;
+      }
+
+      .remove-btn svg {
+        width: 10px;
+        height: 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #fileItems {
+        gap: 8px;
+        justify-content: flex-start;
+      }
+
+      .file-item {
+        width: 85px;
+        height: 85px;
+        padding: 4px;
+      }
+
+      .file-icon {
+        width: 75px;
+        height: 75px;
+      }
+
+      .add-more-btn {
+        width: 85px;
+        height: 85px;
+      }
+
+      .file-index {
+        font-size: 10px;
+        padding: 2px 4px;
+      }
     }
   </style>
 </head>
 
 <body>
+  <!-- SVG 图标定义 -->
+  <svg style="display: none;">
+    <defs>
+      <symbol id="x-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round">
+        <path d="m18 6-12 12" />
+        <path d="m6 6 12 12" />
+      </symbol>
+    </defs>
+  </svg>
+
   <div class="container">
     <div class="header">
       <h1>长截图拼接工具</h1>
       <p>智能拼接多张截图，自动识别重叠区域</p>
     </div>
 
-    <div class="upload-area" id="uploadArea">
-      <div class="upload-text">点击选择图片或拖拽到此处</div>
-      <div class="upload-hint">支持 JPG、PNG、WebP 等格式，建议按顺序选择</div>
+    <div class="upload-section" id="uploadArea">
+      <h3>选择图片</h3>
+      <div class="upload-prompt" id="uploadPrompt">
+        <div class="add-more-btn" id="addMoreBtn">+</div>
+      </div>
+      <div class="selected-images" id="selectedImages" style="display: none;">
+        <div id="fileItems"></div>
+      </div>
       <input type="file" id="fileInput" class="file-input" multiple accept="image/*">
     </div>
 
@@ -359,13 +542,6 @@
       <div class="setting-item">
         <label for="ignorePixels">忽略右侧像素数量:</label>
         <input type="number" id="ignorePixels" value="20" min="0" max="100">
-      </div>
-    </div>
-
-    <div class="file-list" id="fileList">
-      <h3>已选择的图片 (<span id="fileCount">0</span>)</h3>
-      <div id="fileItems">
-        <div class="empty-state">请选择至少2张图片</div>
       </div>
     </div>
 
@@ -410,6 +586,8 @@
         this.selectedFiles = [];
         this.resultCanvas = null;
 
+
+
         this.initializeElements();
         this.bindEvents();
       }
@@ -417,9 +595,10 @@
       initializeElements() {
         this.uploadArea = document.getElementById('uploadArea');
         this.fileInput = document.getElementById('fileInput');
-        this.fileList = document.getElementById('fileList');
+        this.uploadPrompt = document.getElementById('uploadPrompt');
+        this.selectedImages = document.getElementById('selectedImages');
         this.fileItems = document.getElementById('fileItems');
-        this.fileCount = document.getElementById('fileCount');
+        this.addMoreBtn = document.getElementById('addMoreBtn');
         this.stitchBtn = document.getElementById('stitchBtn');
         this.clearBtn = document.getElementById('clearBtn');
         this.progress = document.getElementById('progress');
@@ -434,9 +613,14 @@
       }
 
       bindEvents() {
-        // 文件选择
-        this.uploadArea.addEventListener('click', () => this.fileInput.click());
+        // 文件选择 - 只通过添加按钮触发
         this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+
+        // 添加图片按钮
+        this.addMoreBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.fileInput.click();
+        });
 
         // 拖拽上传
         this.uploadArea.addEventListener('dragover', (e) => this.handleDragOver(e));
@@ -492,31 +676,70 @@
       }
 
       updateFileList() {
-        this.fileCount.textContent = this.selectedFiles.length;
-
         if (this.selectedFiles.length === 0) {
-          this.fileItems.innerHTML = '<div class="empty-state">请选择至少2张图片</div>';
+          // 显示上传提示，隐藏图片区域
+          this.uploadPrompt.style.display = 'flex';
+          this.selectedImages.style.display = 'none';
           return;
         }
+
+        // 隐藏上传提示，显示图片区域
+        this.uploadPrompt.style.display = 'none';
+        this.selectedImages.style.display = 'block';
 
         this.fileItems.innerHTML = '';
         this.selectedFiles.forEach((file, index) => {
           const fileItem = document.createElement('div');
           fileItem.className = 'file-item';
 
+          // 创建图片预览
+          const fileIconContainer = document.createElement('div');
+          fileIconContainer.className = 'file-icon';
+
+          const filePreview = document.createElement('img');
+          filePreview.className = 'file-preview';
+          filePreview.alt = '图片预览';
+
+          const fileIndex = document.createElement('div');
+          fileIndex.className = 'file-index';
+          fileIndex.textContent = index + 1;
+
+          fileIconContainer.appendChild(filePreview);
+          fileIconContainer.appendChild(fileIndex);
+
+          // 添加删除按钮
           fileItem.innerHTML = `
-                        <div class="file-info">
-                            <div class="file-icon">${index + 1}</div>
-                            <div class="file-details">
-                                <div class="file-name">${file.name}</div>
-                                <div class="file-size">${this.formatFileSize(file.size)}</div>
-                            </div>
-                        </div>
-                        <button class="remove-btn" onclick="app.removeFile(${index})">移除</button>
+                        <button class="remove-btn" onclick="app.removeFile(${index})">
+                          <svg><use href="#x-icon"></use></svg>
+                        </button>
                     `;
+
+          // 将预览图片容器添加到文件项中
+          fileItem.appendChild(fileIconContainer);
+
+          // 生成图片预览
+          this.generateImagePreview(file, filePreview);
 
           this.fileItems.appendChild(fileItem);
         });
+
+        // 在图片后面添加"添加更多"按钮
+        const addMoreInList = document.createElement('div');
+        addMoreInList.className = 'file-item add-more-in-list';
+        addMoreInList.innerHTML = '<div class="add-more-icon">+</div>';
+        addMoreInList.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.fileInput.click();
+        });
+        this.fileItems.appendChild(addMoreInList);
+      }
+
+      generateImagePreview(file, imgElement) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          imgElement.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
       }
 
       removeFile(index) {
@@ -524,6 +747,12 @@
         this.updateFileList();
         this.updateButtons();
       }
+
+
+
+
+
+
 
       clearFiles() {
         this.selectedFiles = [];
@@ -637,6 +866,11 @@
 
     // 初始化应用
     const app = new LongShotApp();
+
+    // 初始化 Lucide 图标
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
   </script>
 </body>
 
