@@ -25,8 +25,19 @@ def image_to_row_hashes(image: Image.Image, ignore_right_pixels: int = 20) -> Li
         else:
             row_trimmed = row
 
-        # 使用行像素的简单哈希
-        row_hash = hash(row_trimmed.tobytes())
+        # 使用更加鲁棒的哈希算法 - 计算行的平均色彩值
+        # 这样可以容忍小的像素差异（比如压缩造成的微小变化）
+        if len(row_trimmed.shape) == 2:  # RGB图像
+            row_mean = np.mean(row_trimmed, axis=0)
+            # 量化到较少的级别以提高容忍度
+            row_quantized = (row_mean / 8).astype(int) * 8
+            row_hash = hash(row_quantized.tobytes())
+        else:
+            # 灰度图像
+            row_mean = np.mean(row_trimmed)
+            row_quantized = int(row_mean / 8) * 8
+            row_hash = hash(str(row_quantized))
+
         row_hashes.append(row_hash)
 
     return row_hashes
@@ -76,41 +87,20 @@ def find_best_overlap(
 ) -> Tuple[int, int, int]:
     """
     寻找最佳重叠区域
-    优先考虑中间部分的重叠，避免顶部和底部的UI元素重叠
+    直接在整张图片上寻找最长公共子串
     """
-    img1_height = len(img1_hashes)
-    img2_height = len(img2_hashes)
+    print(f"  搜索重叠区域: img1有{len(img1_hashes)}行, img2有{len(img2_hashes)}行")
 
-    # 定义搜索区域，避免顶部和底部20%的区域
-    img1_start = int(img1_height * 0.2)
-    img1_end = int(img1_height * 0.8)
-    img2_start = int(img2_height * 0.2)
-    img2_end = int(img2_height * 0.8)
+    # 先尝试更低的阈值
+    overlap = find_longest_common_substring(img1_hashes, img2_hashes, min_ratio=0.01)
 
-    best_overlap = (-1, -1, 0)
-
-    # 在中间区域寻找重叠
-    middle_img1 = img1_hashes[img1_start:img1_end]
-    middle_img2 = img2_hashes[img2_start:img2_end]
-
-    overlap = find_longest_common_substring(middle_img1, middle_img2, min_ratio=0.15)
     if overlap[2] > 0:
-        # 调整位置到原图坐标系
-        adjusted_overlap = (
-            overlap[0] + img1_start,
-            overlap[1] + img2_start,
-            overlap[2],
-        )
-        if adjusted_overlap[2] > best_overlap[2]:
-            best_overlap = adjusted_overlap
-
-    # 如果中间区域没找到足够的重叠，尝试全图搜索
-    if best_overlap[2] == 0:
-        overlap = find_longest_common_substring(img1_hashes, img2_hashes, min_ratio=0.1)
-        if overlap[2] > 0:
-            best_overlap = overlap
-
-    return best_overlap
+        overlap_ratio = overlap[2] / min(len(img1_hashes), len(img2_hashes))
+        print(f"  找到重叠: 长度{overlap[2]}行, 占比{overlap_ratio:.2%}")
+        return overlap
+    else:
+        print("  未找到任何重叠区域")
+        return (-1, -1, 0)
 
 
 def stitch_images(
