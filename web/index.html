@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>长截图拼接工具</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8f9fa;
+      color: #2c3e50;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      font-size: 2.5em;
+      font-weight: 300;
+      color: #34495e;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #7f8c8d;
+      font-size: 1.1em;
+    }
+
+    .upload-area {
+      background: white;
+      border: 2px dashed #bdc3c7;
+      border-radius: 4px;
+      padding: 40px 20px;
+      text-align: center;
+      margin-bottom: 30px;
+      cursor: pointer;
+    }
+
+    .upload-area:hover {
+      border-color: #3498db;
+    }
+
+    .upload-area.dragover {
+      border-color: #2980b9;
+    }
+
+
+
+    .upload-text {
+      font-size: 1.2em;
+      color: #7f8c8d;
+      margin-bottom: 10px;
+    }
+
+    .upload-hint {
+      font-size: 0.9em;
+      color: #95a5a6;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .settings {
+      background: white;
+      border-radius: 4px;
+      padding: 20px;
+      margin-bottom: 30px;
+      border: 1px solid #ddd;
+    }
+
+    .settings h3 {
+      margin-bottom: 20px;
+      color: #2c3e50;
+      font-weight: 500;
+    }
+
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+
+    .setting-item label {
+      color: #34495e;
+      font-weight: 500;
+    }
+
+    .setting-item input {
+      width: 80px;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 2px;
+      font-size: 14px;
+    }
+
+    .file-list {
+      background: white;
+      border-radius: 4px;
+      padding: 20px;
+      margin-bottom: 30px;
+      border: 1px solid #ddd;
+    }
+
+    .file-list h3 {
+      margin-bottom: 20px;
+      color: #2c3e50;
+      font-weight: 500;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #ecf0f1;
+    }
+
+    .file-item:last-child {
+      border-bottom: none;
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+    }
+
+    .file-icon {
+      width: 40px;
+      height: 40px;
+      background: #3498db;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      margin-right: 15px;
+      font-size: 12px;
+    }
+
+    .file-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .file-name {
+      font-weight: 500;
+      color: #2c3e50;
+      margin-bottom: 2px;
+    }
+
+    .file-size {
+      font-size: 0.9em;
+      color: #7f8c8d;
+    }
+
+    .remove-btn {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .remove-btn:hover {
+      background: #c0392b;
+    }
+
+    .actions {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 2px;
+      font-size: 1em;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: #3498db;
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #2980b9;
+    }
+
+    .btn-secondary {
+      background: #95a5a6;
+      color: white;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #7f8c8d;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .progress {
+      background: white;
+      border-radius: 4px;
+      padding: 20px;
+      margin-bottom: 30px;
+      display: none;
+      border: 1px solid #ddd;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #ecf0f1;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 15px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #3498db;
+      width: 0%;
+    }
+
+    .progress-text {
+      text-align: center;
+      color: #7f8c8d;
+      font-size: 0.9em;
+    }
+
+    .result {
+      background: white;
+      border-radius: 4px;
+      padding: 20px;
+      text-align: center;
+      display: none;
+      border: 1px solid #ddd;
+    }
+
+    .result-image {
+      max-width: 100%;
+      max-height: 600px;
+      border-radius: 2px;
+      border: 1px solid #ddd;
+      margin-bottom: 20px;
+      cursor: pointer;
+    }
+
+    .image-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      cursor: pointer;
+    }
+
+    .image-modal img {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 95%;
+      max-height: 95%;
+      border-radius: 2px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: white;
+      font-size: 40px;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 1001;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #7f8c8d;
+      font-style: italic;
+      padding: 20px 0;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 15px;
+      }
+
+      .header h1 {
+        font-size: 2em;
+      }
+
+      .upload-area {
+        padding: 40px 15px;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+
+      .btn {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>长截图拼接工具</h1>
+      <p>智能拼接多张截图，自动识别重叠区域</p>
+    </div>
+
+    <div class="upload-area" id="uploadArea">
+      <div class="upload-text">点击选择图片或拖拽到此处</div>
+      <div class="upload-hint">支持 JPG、PNG、WebP 等格式，建议按顺序选择</div>
+      <input type="file" id="fileInput" class="file-input" multiple accept="image/*">
+    </div>
+
+    <div class="settings">
+      <h3>设置</h3>
+      <div class="setting-item">
+        <label for="ignorePixels">忽略右侧像素数量:</label>
+        <input type="number" id="ignorePixels" value="20" min="0" max="100">
+      </div>
+    </div>
+
+    <div class="file-list" id="fileList">
+      <h3>已选择的图片 (<span id="fileCount">0</span>)</h3>
+      <div id="fileItems">
+        <div class="empty-state">请选择至少2张图片</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="stitchBtn" disabled>
+        开始拼接
+      </button>
+      <button class="btn btn-secondary" id="clearBtn" disabled>
+        清空列表
+      </button>
+    </div>
+
+    <div class="progress" id="progress">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-text" id="progressText">准备中...</div>
+    </div>
+
+    <div class="result" id="result">
+      <h3>拼接结果</h3>
+      <img id="resultImage" class="result-image" alt="拼接结果" title="点击查看大图">
+      <div>
+        <button class="btn btn-primary" id="downloadBtn">
+          下载图片
+        </button>
+      </div>
+    </div>
+
+    <!-- 图片预览模态框 -->
+    <div class="image-modal" id="imageModal">
+      <span class="modal-close">&times;</span>
+      <img id="modalImage" alt="预览图片">
+    </div>
+  </div>
+
+  <script src="longshot.js"></script>
+  <script>
+    class LongShotApp {
+      constructor() {
+        this.stitcher = new LongScreenshotStitcher();
+        this.selectedFiles = [];
+        this.resultCanvas = null;
+
+        this.initializeElements();
+        this.bindEvents();
+      }
+
+      initializeElements() {
+        this.uploadArea = document.getElementById('uploadArea');
+        this.fileInput = document.getElementById('fileInput');
+        this.fileList = document.getElementById('fileList');
+        this.fileItems = document.getElementById('fileItems');
+        this.fileCount = document.getElementById('fileCount');
+        this.stitchBtn = document.getElementById('stitchBtn');
+        this.clearBtn = document.getElementById('clearBtn');
+        this.progress = document.getElementById('progress');
+        this.progressFill = document.getElementById('progressFill');
+        this.progressText = document.getElementById('progressText');
+        this.result = document.getElementById('result');
+        this.resultImage = document.getElementById('resultImage');
+        this.downloadBtn = document.getElementById('downloadBtn');
+        this.ignorePixels = document.getElementById('ignorePixels');
+        this.imageModal = document.getElementById('imageModal');
+        this.modalImage = document.getElementById('modalImage');
+      }
+
+      bindEvents() {
+        // 文件选择
+        this.uploadArea.addEventListener('click', () => this.fileInput.click());
+        this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+
+        // 拖拽上传
+        this.uploadArea.addEventListener('dragover', (e) => this.handleDragOver(e));
+        this.uploadArea.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+        this.uploadArea.addEventListener('drop', (e) => this.handleDrop(e));
+
+        // 按钮事件
+        this.stitchBtn.addEventListener('click', () => this.startStitching());
+        this.clearBtn.addEventListener('click', () => this.clearFiles());
+        this.downloadBtn.addEventListener('click', () => this.downloadResult());
+
+        // 设置变更
+        this.ignorePixels.addEventListener('change', () => {
+          this.stitcher.setIgnoreRightPixels(parseInt(this.ignorePixels.value) || 20);
+        });
+
+        // 图片预览模态框
+        this.resultImage.addEventListener('click', () => this.showImageModal());
+        this.imageModal.addEventListener('click', () => this.hideImageModal());
+        document.querySelector('.modal-close').addEventListener('click', () => this.hideImageModal());
+      }
+
+      handleFileSelect(e) {
+        const files = Array.from(e.target.files);
+        this.addFiles(files);
+      }
+
+      handleDragOver(e) {
+        e.preventDefault();
+        this.uploadArea.classList.add('dragover');
+      }
+
+      handleDragLeave(e) {
+        e.preventDefault();
+        this.uploadArea.classList.remove('dragover');
+      }
+
+      handleDrop(e) {
+        e.preventDefault();
+        this.uploadArea.classList.remove('dragover');
+
+        const files = Array.from(e.dataTransfer.files).filter(file =>
+          file.type.startsWith('image/')
+        );
+        this.addFiles(files);
+      }
+
+      addFiles(files) {
+        const validFiles = files.filter(file => file.type.startsWith('image/'));
+        this.selectedFiles.push(...validFiles);
+        this.updateFileList();
+        this.updateButtons();
+      }
+
+      updateFileList() {
+        this.fileCount.textContent = this.selectedFiles.length;
+
+        if (this.selectedFiles.length === 0) {
+          this.fileItems.innerHTML = '<div class="empty-state">请选择至少2张图片</div>';
+          return;
+        }
+
+        this.fileItems.innerHTML = '';
+        this.selectedFiles.forEach((file, index) => {
+          const fileItem = document.createElement('div');
+          fileItem.className = 'file-item';
+
+          fileItem.innerHTML = `
+                        <div class="file-info">
+                            <div class="file-icon">${index + 1}</div>
+                            <div class="file-details">
+                                <div class="file-name">${file.name}</div>
+                                <div class="file-size">${this.formatFileSize(file.size)}</div>
+                            </div>
+                        </div>
+                        <button class="remove-btn" onclick="app.removeFile(${index})">移除</button>
+                    `;
+
+          this.fileItems.appendChild(fileItem);
+        });
+      }
+
+      removeFile(index) {
+        this.selectedFiles.splice(index, 1);
+        this.updateFileList();
+        this.updateButtons();
+      }
+
+      clearFiles() {
+        this.selectedFiles = [];
+        this.fileInput.value = '';
+        this.updateFileList();
+        this.updateButtons();
+        this.hideResult();
+      }
+
+      updateButtons() {
+        const hasEnoughFiles = this.selectedFiles.length >= 2;
+        this.stitchBtn.disabled = !hasEnoughFiles;
+        this.clearBtn.disabled = this.selectedFiles.length === 0;
+      }
+
+      async startStitching() {
+        if (this.selectedFiles.length < 2) {
+          alert('请至少选择2张图片');
+          return;
+        }
+
+        this.showProgress();
+        this.hideResult();
+        this.stitchBtn.disabled = true;
+
+        try {
+          this.resultCanvas = await this.stitcher.stitchMultipleImages(
+            this.selectedFiles,
+            (progress) => this.updateProgress(progress)
+          );
+
+          this.showResult();
+        } catch (error) {
+          console.error('拼接失败:', error);
+          alert(`拼接失败: ${error.message}`);
+        } finally {
+          this.hideProgress();
+          this.stitchBtn.disabled = false;
+        }
+      }
+
+      updateProgress(progress) {
+        let percentage, text;
+
+        if (progress.stage === 'loading') {
+          percentage = (progress.current / progress.total) * 50;
+          text = `加载图片中... (${progress.current}/${progress.total})`;
+        } else if (progress.stage === 'stitching') {
+          percentage = 50 + (progress.current / progress.total) * 50;
+          text = `拼接中... (${progress.current}/${progress.total})`;
+        }
+
+        this.progressFill.style.width = `${percentage}%`;
+        this.progressText.textContent = text;
+      }
+
+      showProgress() {
+        this.progress.style.display = 'block';
+        this.progressFill.style.width = '0%';
+        this.progressText.textContent = '准备中...';
+      }
+
+      hideProgress() {
+        this.progress.style.display = 'none';
+      }
+
+      showResult() {
+        if (this.resultCanvas) {
+          this.resultImage.src = this.resultCanvas.toDataURL('image/jpeg', 0.9);
+          this.result.style.display = 'block';
+
+          // 滚动到结果区域
+          this.result.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+
+      hideResult() {
+        this.result.style.display = 'none';
+      }
+
+      downloadResult() {
+        if (!this.resultCanvas) return;
+
+        const link = document.createElement('a');
+        link.download = `longshot-result-${new Date().getTime()}.jpg`;
+        link.href = this.resultCanvas.toDataURL('image/jpeg', 0.9);
+        link.click();
+      }
+
+      showImageModal() {
+        if (this.resultCanvas) {
+          this.modalImage.src = this.resultCanvas.toDataURL('image/jpeg', 0.9);
+          this.imageModal.style.display = 'block';
+          document.body.style.overflow = 'hidden'; // 防止背景滚动
+        }
+      }
+
+      hideImageModal() {
+        this.imageModal.style.display = 'none';
+        document.body.style.overflow = 'auto'; // 恢复背景滚动
+      }
+
+      formatFileSize(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+      }
+    }
+
+    // 初始化应用
+    const app = new LongShotApp();
+  </script>
+</body>
+
+</html>
